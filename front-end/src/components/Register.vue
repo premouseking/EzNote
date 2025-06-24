@@ -16,16 +16,14 @@
       <el-form-item label="用户名" prop="username">
         <el-input 
           v-model="registerForm.username" 
-          placeholder="输入用户名"
-          prefix-icon="el-icon-user">
+          placeholder="输入用户名">
         </el-input>
       </el-form-item>
       
       <el-form-item label="电子邮箱" prop="email">
         <el-input 
           v-model="registerForm.email" 
-          placeholder="输入电子邮箱"
-          prefix-icon="el-icon-message">
+          placeholder="输入电子邮箱">
         </el-input>
       </el-form-item>
       
@@ -34,7 +32,6 @@
           v-model="registerForm.password" 
           type="password" 
           placeholder="创建密码"
-          prefix-icon="el-icon-lock"
           show-password>
         </el-input>
       </el-form-item>
@@ -44,7 +41,6 @@
           v-model="registerForm.passwordConfirm" 
           type="password" 
           placeholder="再次输入密码"
-          prefix-icon="el-icon-lock"
           show-password>
         </el-input>
       </el-form-item>
@@ -67,21 +63,13 @@
 </template>
 
 <script>
-// 保持原有脚本内容不变
+
 import { mapActions } from 'vuex'
 
 export default {
   name: "Register",
   data() {
-    const validatePasswordConfirm = (rule, value, callback) => {
-      if (value === '') {
-        callback(new Error('请再次输入密码'));
-      } else if (value !== this.registerForm.password) {
-        callback(new Error('两次输入的密码不一致'));
-      } else {
-        callback();
-      }
-    };
+    
     return {
       registerForm: {
         username: '',
@@ -98,40 +86,110 @@ export default {
       },
       showSuccess: false,
       rules: {
-        username: [
-          { required: true, message: '请输入用户名', trigger: 'blur' },
-          { min: 3, max: 20, message: '用户名长度在3到20个字符之间', trigger: 'blur' }
-        ],
-        email: [
-          { required: true, message: '请输入电子邮箱', trigger: 'blur' },
-          { type: 'email', message: '请输入有效的电子邮箱地址', trigger: 'blur' }
-        ],
-        password: [
-          { required: true, message: '请输入密码', trigger: 'blur' },
-          { min: 6, message: '密码长度至少为6个字符', trigger: 'blur' }
-        ],
-        passwordConfirm: [
-          { required: true, message: '请确认密码', trigger: 'blur' },
-          { validator: validatePasswordConfirm, trigger: 'blur' }
-        ],
-        terms: [
-          { 
-            validator: (rule, value, callback) => {
-              if (value === false) {
-                callback(new Error('请同意服务条款和隐私政策'));
-              } else {
-                callback();
-              }
-            }, 
-            trigger: 'change' 
-          }
-        ]
+      username: [
+        { required: true, validator: this.validateUsername, trigger: 'blur' }
+      ],
+      email: [
+        { required: true, validator: this.validateEmail, trigger: 'blur' }
+      ],
+      password: [
+        { required: true, validator: this.validatePassword, trigger: 'blur' }
+      ],
+      passwordConfirm: [
+        { required: true, validator: this.validatePasswordConfirm, trigger: 'blur' }
+      ],
+      terms: [
+        { validator: this.validateTerms, trigger: 'change' }
+      ]
       }
     }
   },
+
   methods: {
     ...mapActions('auth', ['register']),
-    
+
+    /**
+     * @param rule 验证规则对象
+     * @param value 当前输入值
+     * @param callback 回调函数，返回验证结果
+     * 验证用户名长度
+     */
+    validateUsername(rule, value, callback) {
+    if (value === '') {
+      callback(new Error('请输入用户名'));
+    } else if (value.length < 1 || value.length > 20) {
+      callback(new Error('用户名长度在1到20个字符之间'));
+    } else {
+      callback();
+    }
+  },
+
+  /**
+    * @param rule 验证规则对象
+    * @param value 当前输入值
+    * @param callback 回调函数，返回验证结果
+    * 验证电子邮箱格式
+   */
+    validateEmail(rule, value, callback) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (value === '') {
+      callback(new Error('请输入电子邮箱'));
+    } else if (!emailRegex.test(value)) {
+      callback(new Error('请输入有效的电子邮箱地址'));
+    } else {
+      callback();
+    }
+  },
+
+   /**
+    * @param rule 验证规则对象
+    * @param value 当前输入值
+    * @param callback 回调函数，返回验证结果
+    * 验证密码长度
+    */
+    validatePassword(rule, value, callback) {
+    if (value === '') {
+      callback(new Error('请输入密码'));
+    } else if (value.length < 6) {
+      callback(new Error('密码长度至少为6个字符'));
+    } else {
+      callback();
+    }
+  },
+
+    //密码确认验证函数
+    /**
+     * @param rule 验证规则对象
+     * @param value 当前输入值
+     * @param callback 回调函数，返回验证结果
+     */
+    validatePasswordConfirm (rule, value, callback) {
+      if (value === '') {
+        callback(new Error('请再次输入密码'));
+      } else if (value !== this.registerForm.password) {
+        callback(new Error('两次输入的密码不一致'));
+      } else {
+        callback();
+      }
+    },
+
+      /**
+       * @param rule 验证规则对象
+       * @param value 当前输入值
+       * @param callback 回调函数，返回验证结果
+       * 验证用户是否同意服务条款和隐私政策
+       */
+      validateTerms(rule, value, callback) {
+    if (value === false) {
+      callback(new Error('请同意服务条款和隐私政策'));
+    } else {
+      callback();
+    }
+  },
+
+    /**
+     * 提交注册表单
+     */
     onSubmit() {
       this.$refs.registerFormRef.validate((valid) => {
         if (valid) {
@@ -257,23 +315,23 @@ h1 {
 
 /* 按钮样式 */
 .btn-login {
-  background: linear-gradient(135deg, #6898ec 0%, #6898ec 100%) !important;
-  color: white !important;
-  border: none !important;
-  padding: 14px !important;
-  width: 100% !important;
-  border-radius: 10px !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.3s !important;
-  margin-bottom: 20px !important;
-  letter-spacing: 1px !important;
+            background: linear-gradient(135deg, #6898ec 100%);
+            color: white;
+            border: none;
+            padding:14px;
+            width: 100%;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
 }
 
 .btn-login:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 7px 15px rgba(37, 117, 252, 0.4) !important;
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(37, 117, 252, 0.4);
 }
 
 /* 复选框样式 */
@@ -341,7 +399,6 @@ h1 {
   box-shadow: 0 0 0 1px #f56c6c, 0 0 0 3px rgba(245, 108, 108, 0.2) !important;
 }
 
-/* 移除可能的额外边框 */
 .el-input__inner {
   border: none !important;
   height: 45px !important;
@@ -349,7 +406,7 @@ h1 {
   box-shadow: none !important;
 }
 
-/* 确保没有元素拥有轮廓 */
+
 .el-input input,
 .el-input textarea,
 .el-input * {
