@@ -1,8 +1,9 @@
 <template>
-  <div class="container">
+  <div class="login-container">
+    <div class="logo">格知</div>
     <h1>创建账户</h1>
     
-    <div class="success-message" id="successMessage" v-if="showSuccess">
+    <div class="success-message" v-if="showSuccess">
       <h2>🎉 注册成功！</h2>
     </div>
     
@@ -55,17 +56,18 @@
       </el-form-item>
       
       <el-form-item>
-        <el-button type="primary" @click="onSubmit" style="width: 100%">注册</el-button>
+        <el-button type="primary" @click="onSubmit" class="btn-login">注册</el-button>
       </el-form-item>
       
-      <div class="login-link">
-        已有账户？<el-link type="primary" @click="toLogin">立即登录</el-link>
+      <div class="signup-link">
+        已有账户？<a href="#" @click.prevent="toLogin">立即登录</a>
       </div>
     </el-form>
   </div>
 </template>
 
 <script>
+// 保持原有脚本内容不变
 import { mapActions } from 'vuex'
 
 export default {
@@ -124,53 +126,33 @@ export default {
             trigger: 'change' 
           }
         ]
+      }
     }
-  }
-},
+  },
   methods: {
     ...mapActions('auth', ['register']),
     
     onSubmit() {
-      this.validateForm();
-      // 如果有错误，则不提交
-      if (Object.values(this.errors).some(error => error !== '')) {
-        return;
-      }
-
-      
-      this.register({
-        username: this.registerForm.username,
-        password: this.registerForm.password,
-        email: this.registerForm.email
-      })
-      .then(() => {
-        this.showSuccess = true
-        setTimeout(() => {
-          this.$router.push('/home')
-        }, 2000)
-      })
-      .catch(error => {
-        // 处理错误
-        this.$message.error('注册失败：' + error.message || '未知错误');
-        console.error('注册失败:', error);
-      })
-    },
-    validateForm() {
-      this.errors.username = this.registerForm.username ? '' : '用户名不能为空';
-      this.errors.email = this.registerForm.email ? '' : '电子邮箱不能为空';
-      this.errors.password = this.registerForm.password ? '' : '密码不能为空';
-      this.errors.passwordConfirm = this.registerForm.passwordConfirm === this.registerForm.password ? '' : '两次输入的密码不一致';
-
-      // 检查是否同意条款
-      if (!this.registerForm.terms) {
-        this.$message({
-          message: '请您勾选同意服务条款和隐私政策后再进行注册',
-          type: 'warning',
-          duration: 3000,
-          showClose: true
-        });
-        return false;
-      }
+      this.$refs.registerFormRef.validate((valid) => {
+        if (valid) {
+          this.register({
+            username: this.registerForm.username,
+            password: this.registerForm.password,
+            email: this.registerForm.email
+          })
+          .then(() => {
+            this.showSuccess = true
+            setTimeout(() => {
+              this.$router.push('/home')
+            }, 2000)
+          })
+          .catch(error => {
+            // 处理错误
+            this.$message.error('注册失败：' + error.message || '未知错误');
+            console.error('注册失败:', error);
+          })
+        }
+      });
     },
     toLogin() {
       this.$router.push('/login')
@@ -180,163 +162,197 @@ export default {
 </script>
 
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  
-  body {
-    background: linear-gradient(135deg, #e0f7fa, #bbdefb, #81d4fa);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-  }
-  
-  .container {
-    background-color: white;
-    border-radius: 15px;
-    box-shadow: 0 15px 30px rgba(66, 133, 244, 0.2);
-    width: 100%;
-    max-width: 450px;
-    padding: 40px;
-    position: relative;
-    overflow: hidden;
-    margin: 0 auto;
-  }
-  
-  .container::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 10px;
-    background: linear-gradient(90deg, #4fc3f7, #29b6f6, #03a9f4);
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #ebe6f0 0%, #7da6ee 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.login-container {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 480px;
+  padding: 40px;
+  text-align: center;
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.logo {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #ede3f7 0%, #2575fc 100%);
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 32px;
+  font-weight: bold;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 30px;
+  font-weight: 600;
+  font-size: 28px;
+}
+
+.success-message {
+  text-align: center;
+  padding: 20px;
+  background-color: rgba(37, 117, 252, 0.1);
+  border-radius: 10px;
+  animation: fadeIn 0.5s;
+  margin-bottom: 20px;
+}
+
+/* Element Plus 样式覆盖 */
+.el-form-item__label {
+  color: #555 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  text-align: left !important;
+  margin-bottom: 8px !important;
+}
+
+/* 输入框样式 */
+.el-input__wrapper {
+  box-shadow: 0 0 0 1px #ddd !important;
+  border-radius: 10px !important;
+  padding: 0 15px !important;
+  height: 45px !important;
+  transition: all 0.3s ease !important;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px #88aff2, 0 0 0 3px rgba(37, 117, 252, 0.2) !important;
+}
+
+.el-input__inner {
+  height: 45px !important;
+}
+
+.el-input__prefix {
+  left: 15px !important;
+}
+
+/* 按钮样式 */
+.btn-login {
+  background: linear-gradient(135deg, #6898ec 0%, #6898ec 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 14px !important;
+  width: 100% !important;
+  border-radius: 10px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s !important;
+  margin-bottom: 20px !important;
+  letter-spacing: 1px !important;
+}
+
+.btn-login:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 7px 15px rgba(37, 117, 252, 0.4) !important;
+}
+
+/* 复选框样式 */
+.el-checkbox__inner {
+  accent-color: #7ca6ed !important;
+}
+
+.el-checkbox__label {
+  font-size: 14px !important;
+}
+
+.el-checkbox__label a {
+  color: #79a7f7 !important;
+  text-decoration: none !important;
+}
+
+.el-checkbox__label a:hover {
+  text-decoration: underline !important;
+  color: #2575fc !important;
+}
+
+/* 登录链接 */
+.signup-link {
+  color: #666;
+  font-size: 15px;
+  margin-top: 15px;
+}
+
+.signup-link a {
+  color: #7da9f4;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 5px;
+  transition: all 0.2s;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+  color: #2575fc;
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 30px 20px;
   }
   
   h1 {
-    color: #0288d1;
-    font-size: 32px;
-    text-align: center;
-    margin-bottom: 30px;
-    letter-spacing: 1px;
+    font-size: 24px;
   }
+  
+  .logo {
+    width: 80px;
+    height: 80px;
+    font-size: 26px;
+  }
+}
 
-  .login-link {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 14px;
-    color: #0288d1;
-  }
-  
-  .success-message {
-    text-align: center;
-    padding: 20px;
-    background-color: #e0f7fa;
-    border-radius: 10px;
-    animation: fadeIn 0.5s;
-    margin-bottom: 20px;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  
-  /* Element Plus 样式覆盖 */
-  .el-form-item__label {
-    color: #0288d1 !important;
-    font-weight: 600 !important;
-    font-size: 14px !important;
-  }
-  
-  /* 修复输入框内的淡蓝色框问题 */
-  .el-input {
-    --el-input-border-color: #e1f5fe !important;
-    --el-input-hover-border-color: #03a9f4 !important;
-    --el-input-focus-border-color: #03a9f4 !important;
-  }
-  
-  .el-input__wrapper {
-    box-shadow: 0 0 0 1px #e1f5fe !important;
-    border-radius: 10px !important;
-    padding: 0 15px !important;
-    height: 45px !important;
-    transition: all 0.3s ease !important;
-    background-color: transparent !important;
-  }
-  
-  .el-input__wrapper.is-focus {
-    box-shadow: 0 0 0 1px #03a9f4, 0 0 0 3px rgba(3, 169, 244, 0.2) !important;
-  }
-  
-  /* 移除原来可能导致问题的样式 */
-  .el-input__inner {
-    height: 45px !important;
-    border: none !important;
-    background: transparent !important;
-  }
-  
-  .el-input__prefix {
-    color: #4fc3f7 !important;
-    font-size: 18px !important;
-    left: 15px !important;
-  }
-  
-  .el-button--primary {
-    background: linear-gradient(90deg, #0288d1, #039be5) !important;
-    border: none !important;
-    border-radius: 10px !important;
-    padding: 16px !important;
-    font-size: 16px !important;
-    font-weight: 600 !important;
-    letter-spacing: 1px !important;
-    transition: all 0.3s ease !important;
-  }
-  
-  .el-button--primary:hover {
-    background: linear-gradient(90deg, #0277bd, #0288d1) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 7px 14px rgba(2, 136, 209, 0.3) !important;
-  }
-  
-  .el-checkbox__label {
-    font-size: 14px !important;
-  }
-  
-  .el-checkbox__label a {
-    color: #01579b !important;
-    text-decoration: none !important;
-  }
-  
-  .el-checkbox__label a:hover {
-    text-decoration: underline !important;
-  }
-  
-  .el-link {
-    font-weight: 600 !important;
-    margin-left: 5px !important;
-  }
-  
-  .el-link:hover {
-    text-decoration: underline !important;
-  }
-  
-  .el-form-item {
-    margin-bottom: 25px !important;
-  }
-  
-  @media (max-width: 500px) {
-    .container {
-      padding: 30px 20px;
-    }
-    
-    h1 {
-      font-size: 26px;
-    }
-  }
+.el-form-item.is-error .el-input__wrapper {
+  box-shadow: 0 0 0 1px #f56c6c !important;
+  border: none !important;
+}
+
+.el-form-item.is-error .el-input__wrapper:hover,
+.el-form-item.is-error .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px #f56c6c, 0 0 0 3px rgba(245, 108, 108, 0.2) !important;
+}
+
+/* 移除可能的额外边框 */
+.el-input__inner {
+  border: none !important;
+  height: 45px !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 确保没有元素拥有轮廓 */
+.el-input input,
+.el-input textarea,
+.el-input * {
+  outline: none !important;
+}
 </style>
