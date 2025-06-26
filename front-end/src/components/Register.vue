@@ -50,9 +50,10 @@
           我已阅读并同意<a href="#" @click.prevent="showTerms">服务条款</a>和<a href="#" @click.prevent="showPrivacy">隐私政策</a>
         </el-checkbox>
       </el-form-item>
-      
-      <el-form-item>
-        <el-button type="primary" @click="onSubmit" class="btn-login">注册</el-button>
+        <el-form-item>
+        <el-button type="primary" @click="onSubmit" class="btn-login" :loading="isLoading">
+          {{ isLoading ? '注册中...' : '注册' }}
+        </el-button>
       </el-form-item>
       
       <div class="signup-link">
@@ -69,8 +70,7 @@ import { mapActions } from 'vuex'
 export default {
   name: "Register",
   data() {
-    
-    return {
+      return {
       registerForm: {
         username: '',
         email: '',
@@ -85,6 +85,7 @@ export default {
         passwordConfirm: ''
       },
       showSuccess: false,
+      isLoading: false,
       rules: {
       username: [
         { required: true, validator: this.validateUsername, trigger: 'blur' }
@@ -179,20 +180,21 @@ export default {
        * @param callback 回调函数，返回验证结果
        * 验证用户是否同意服务条款和隐私政策
        */
-      validateTerms(rule, value, callback) {
+    validateTerms(rule, value, callback) {
     if (value === false) {
       callback(new Error('请同意服务条款和隐私政策'));
     } else {
       callback();
     }
-  },
-
+  },    
     /**
-     * 提交注册表单
-     */
+    * 提交注册表单
+    */
     onSubmit() {
       this.$refs.registerFormRef.validate((valid) => {
         if (valid) {
+          this.isLoading = true
+          
           this.register({
             username: this.registerForm.username,
             password: this.registerForm.password,
@@ -200,20 +202,57 @@ export default {
           })
           .then(() => {
             this.showSuccess = true
+            this.$message.success('注册成功！')
+            
             setTimeout(() => {
-              this.$router.push('/home')
-            }, 2000)
+              // 检查是否有重定向路径
+              const redirect = this.$route.query.redirect || '/home'
+              this.$router.push(redirect)
+            }, 1500)
           })
           .catch(error => {
-            // 处理错误
-            this.$message.error('注册失败：' + error.message || '未知错误');
-            console.error('注册失败:', error);
+            // 处理注册错误
+            console.error('注册失败:', error)
+            this.$message.error(error.message || '注册失败，请稍后重试')
+            
+          })
+          .finally(() => {
+            this.isLoading = false
           })
         }
-      });
+      });    
     },
+    
+    /**
+     * 跳转到登录页面
+     */
     toLogin() {
       this.$router.push('/login')
+    },
+
+    /**
+     * 显示服务条款
+     */
+    showTerms() {
+      this.$message.info('没有服务条款')
+      // 这里可以实现显示服务条款的逻辑
+      // this.$router.push('/terms')
+    },
+
+    /**
+     * 显示隐私政策
+     */
+    showPrivacy() {
+      this.$message.info('没有隐私政策')
+      // 这里可以实现显示隐私政策的逻辑
+      // this.$router.push('/privacy')
+    }
+  },
+
+  mounted() {
+    // 如果用户已经登录，直接跳转到首页
+    if (this.$store.getters['auth/isAuthenticated']) {
+      this.$router.push('/home')
     }
   }
 }
@@ -406,10 +445,26 @@ h1 {
   box-shadow: none !important;
 }
 
-
+/* 以下为处理输入框自动填充时出现蓝色背景出现的白边问题 */
+/* 此为覆盖浏览器自动添加的背景 */
+/* ----------------------------------------------------------- */
 .el-input input,
 .el-input textarea,
 .el-input * {
   outline: none !important;
 }
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: #333 !important;
+}
+
+.el-input__inner:-webkit-autofill,
+.el-input__inner:-webkit-autofill:hover,
+.el-input__inner:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+}
+/* ------------------------------------------------------------------- */
 </style>

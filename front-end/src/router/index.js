@@ -39,7 +39,6 @@ const router = createRouter({
   routes
 })
 
-// 全局前置守卫
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const isAuthenticated = store.getters['auth/isAuthenticated']
