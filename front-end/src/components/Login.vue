@@ -4,7 +4,7 @@
     <h1>登录账户</h1>
     
     <div class="success-message" v-if="showSuccess">
-      <h2>🎉 登录成功！</h2>
+      <h2>登录成功！</h2>
     </div>
     
     <el-form 

@@ -5,12 +5,8 @@ import store from './components/store/index.js'
 import router from './router'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
-import { setupMockInterceptors } from './mock/loginAPI.js'
 
 axios.defaults.baseURL = '/api'
-
-// 设置Mock拦截器
-setupMockInterceptors(axios)
 
 const app = createApp(App)
 
