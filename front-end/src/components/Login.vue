@@ -205,8 +205,8 @@ body {
   background-color: rgba(255, 255, 255, 0.95);
   border-radius: 15px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
-  width: 100%;
-  max-width: 480px;
+  width: 480px; 
+  max-width: 90vw; 
   padding: 40px;
   text-align: center;
   animation: fadeIn 0.8s ease-out;

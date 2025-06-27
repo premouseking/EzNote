@@ -199,8 +199,25 @@ const auth = {
       }
     },
     // 登出操作
-    logout({ commit }) {
-      commit('LOGOUT')
+    async logout({ commit }) {
+      try {
+        // 如果有后端登出接口，可以调用
+        // await axios.post('/logout')
+        
+        // 清除本地存储的用户信息
+        commit('LOGOUT')
+        
+        console.log('用户已成功登出')
+        
+        return Promise.resolve()
+      } catch (error) {
+        console.error('登出过程中发生错误:', error)
+        
+        // 即使出错也要清除本地数据
+        commit('LOGOUT')
+        
+        return Promise.reject(error)
+      }
     }
   },
   getters: {

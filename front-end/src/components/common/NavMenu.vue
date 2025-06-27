@@ -168,6 +168,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import { 
   WarningFilled, 
   SwitchButton, 
@@ -183,6 +185,10 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
+// 添加 store 和 router 实例
+const store = useStore()
+const router = useRouter()
+
 const activeIndex = ref('1')
 const logoutDialogVisible = ref(false)
 const logoutLoading = ref(false)
@@ -196,8 +202,29 @@ const darkMode = ref(false)
 const fontSize = ref(14)
 const notifications = ref(true)
 
-// 初始化时添加按钮动画效果
+// 初始化时添加按钮动画效果和加载设置
 onMounted(() => {
+  // 加载主题设置
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme === 'dark') {
+    darkMode.value = true
+    document.documentElement.classList.add('dark-mode')
+  }
+  
+  // 加载其他设置
+  const savedSettings = localStorage.getItem('userSettings')
+  if (savedSettings) {
+    try {
+      const settings = JSON.parse(savedSettings)
+      darkMode.value = settings.darkMode || false
+      fontSize.value = settings.fontSize || 14
+      notifications.value = settings.notifications !== undefined ? settings.notifications : true
+    } catch (error) {
+      console.error('加载设置失败:', error)
+    }
+  }
+  
+  // 延迟显示登出按钮动画
   setTimeout(() => {
     showPulse.value = true
     setTimeout(() => {
@@ -221,18 +248,36 @@ const cancelLogout = () => {
 }
 
 // 处理登出逻辑
-const handleLogout = () => {
+const handleLogout = async () => {
   logoutLoading.value = true
   
-  // 模拟登出过程
-  setTimeout(() => {
-    // 这里实现登出逻辑
-    console.log('用户已登出')
+  try {
+    // 调用 store 中的登出方法
+    await store.dispatch('auth/logout')
+    
+    // 显示成功消息
+    ElMessage({
+      message: '已成功退出登录',
+      type: 'success',
+      duration: 2000
+    })
     
     // 关闭对话框
-    logoutLoading.value = false
     logoutDialogVisible.value = false
-  }, 600)
+    
+    // 跳转到登录页面
+    await router.push('/login')
+    
+  } catch (error) {
+    console.error('登出失败:', error)
+    ElMessage({
+      message: '登出失败，请重试',
+      type: 'error',
+      duration: 3000
+    })
+  } finally {
+    logoutLoading.value = false
+  }
 }
 
 // 切换设置侧栏显示状态
@@ -243,11 +288,34 @@ const toggleSettingsSidebar = () => {
 // 切换主题
 const changeTheme = (value) => {
   console.log('主题切换为:', value ? '深色' : '浅色')
-  // 这里实现主题切换逻辑
+  // 实现主题切换逻辑
+  if (value) {
+    document.documentElement.classList.add('dark-mode')
+  } else {
+    document.documentElement.classList.remove('dark-mode')
+  }
+  
+  // 将主题设置保存到 localStorage
+  localStorage.setItem('theme', value ? 'dark' : 'light')
+  
+  ElMessage({
+    message: `已切换到${value ? '深色' : '浅色'}主题`,
+    type: 'success',
+    duration: 2000
+  })
 }
 
 // 保存设置
 const saveSettings = () => {
+  // 保存设置到 localStorage
+  const settings = {
+    darkMode: darkMode.value,
+    fontSize: fontSize.value,
+    notifications: notifications.value
+  }
+  
+  localStorage.setItem('userSettings', JSON.stringify(settings))
+  
   ElMessage({
     message: '设置已保存',
     type: 'success',
