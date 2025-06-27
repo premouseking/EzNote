@@ -2,6 +2,51 @@ import { createStore } from 'vuex'
 import axios from 'axios'
 
 /**
+ * 解析JWT载荷信息
+ * @param {string} token JWT令牌
+ * @returns {Object} 解析后的用户信息
+ */
+const parseJwtPayload = (token) => {
+  try {
+    if (!token) return {};
+    
+    // JWT格式：header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.warn('JWT格式不正确');
+      return {};
+    }
+    
+    // 解码payload部分（Base64URL）
+    const payload = parts[1];
+    // 处理Base64URL：替换字符并添加padding
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
+    
+    // 解码并解析JSON
+    const decoded = JSON.parse(atob(padded));
+    
+    console.log('解析JWT载荷:', decoded);
+    
+    // 返回用户信息（根据后端JWT结构调整字段映射）
+    return {
+      id: decoded.sub || decoded.userId || decoded.id,
+      username: decoded.username || decoded.name || decoded.sub,
+      email: decoded.email,
+      role: decoded.role || decoded.authorities,
+      // 添加JWT标准字段
+      exp: decoded.exp, // 过期时间
+      iat: decoded.iat, // 签发时间
+      // 保留原始载荷信息
+      ...decoded
+    };
+  } catch (error) {
+    console.error('解析JWT失败:', error);
+    return {};
+  }
+};
+
+/**
  * 错误处理函数
  * @param {Object} error  错误对象
  * @param {string} defaultMessage 默认错误消息
@@ -9,6 +54,10 @@ import axios from 'axios'
 const handleApiError = (error, defaultMessage = '操作失败，请稍后重试') => {
   console.error('API请求失败:', error);
   
+  // 处理后端返回的错误格式
+  if (error.response?.data?.msg) {
+    throw new Error(error.response.data.msg);
+  }
   if (error.response?.data?.message) {
     throw new Error(error.response.data.message);
   }
@@ -111,42 +160,50 @@ const auth = {
         
         // 发送登录请求到后端
         const response = await axios.post(API_ENDPOINTS.LOGIN, loginData);
-
         const responseData = response.data;
         
-        if (!responseData.success) {
-          // 后端返回登录失败
-          throw new Error(responseData.message || '登录失败');
+        console.log('后端响应:', responseData);
+        
+        // 后端返回格式：{ code: 1, msg: "登录成功", data: "jwt_token_string" }
+        const jwtToken = responseData.data;
+        
+        if (!jwtToken || typeof jwtToken !== 'string') {
+          throw new Error('登录响应格式错误：缺少JWT令牌');
         }
         
-        const { data } = responseData;
-        
-        if (!data || !data.token) {
-          throw new Error('登录响应格式错误：缺少token');
-        }
+        // 从JWT中解析用户信息
+        const userInfo = parseJwtPayload(jwtToken);
         
         // 保存令牌
         commit('SET_TOKEN', { 
-          token: data.token, 
+          token: jwtToken, 
           rememberMe: loginData.rememberMe 
         });
         
         // 保存用户信息
-        if (data.user) {
+        if (userInfo && Object.keys(userInfo).length > 0) {
           commit('SET_USER', { 
-            user: data.user, 
+            user: userInfo, 
             rememberMe: loginData.rememberMe 
           });
         }
         
-        console.log('登录成功:', data.user);
+        console.log('登录成功，用户信息:', userInfo);
         
-        return responseData;
+        // 返回统一格式给前端组件使用
+        return {
+          success: true,
+          message: responseData.msg || '登录成功',
+          data: {
+            token: jwtToken,
+            user: userInfo
+          }
+        };
         
       } catch (error) {
         console.error('登录失败:', error);
-        // 重新抛出错误
-        throw handleApiError(error);
+        // 重新抛出错误，让调用方处理
+        throw error;
       }
     },
     
@@ -158,44 +215,55 @@ const auth = {
           email: userData.email 
         });
         
+        // 发送注册请求到后端
         const response = await axios.post(API_ENDPOINTS.REGISTER, userData);
         const responseData = response.data;
         
-        if (!responseData.success) {
-          // 后端返回注册失败
-          throw new Error(responseData.message || '注册失败');
+        console.log('注册后端响应:', responseData);
+        
+        // 后端返回格式：{ code: 1, msg: "注册成功", data: "jwt_token_string" }
+        const jwtToken = responseData.data;
+        
+        if (!jwtToken || typeof jwtToken !== 'string') {
+          throw new Error('注册响应格式错误：缺少JWT令牌');
         }
         
-        const { data } = responseData;
-        
-        if (!data || !data.token) {
-          throw new Error('注册响应格式错误：缺少token');
-        }
+        // 从JWT中解析用户信息
+        const userInfo = parseJwtPayload(jwtToken);
         
         // 注册默认不记住登录状态，用户可在后续登录时选择
         const rememberMe = false;
         
         // 保存令牌
         commit('SET_TOKEN', { 
-          token: data.token, 
+          token: jwtToken, 
           rememberMe 
         });
         
         // 保存用户信息
-        if (data.user) {
+        if (userInfo && Object.keys(userInfo).length > 0) {
           commit('SET_USER', { 
-            user: data.user, 
+            user: userInfo, 
             rememberMe 
           });
         }
         
-        console.log('注册成功:', data.user);
+        console.log('注册成功，用户信息:', userInfo);
         
-        return responseData;
+        // 返回统一格式给前端组件使用
+        return {
+          success: true,
+          message: responseData.msg || '注册成功',
+          data: {
+            token: jwtToken,
+            user: userInfo
+          }
+        };
+        
       } catch (error) {
         console.error('注册失败:', error);
-        // 重新抛出错误
-        throw handleApiError(error);
+        // 重新抛出错误，让调用方处理
+        throw error;
       }
     },
     // 登出操作
