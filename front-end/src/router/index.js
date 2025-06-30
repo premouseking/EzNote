@@ -27,26 +27,31 @@ const routes = [
     name: 'Index',
     component:Index,
     redirect: '/home',
+    meta: { requiresAuth: true }, // 添加认证要求
     children: [
       {
         path: '/home',
         name: 'Home',
         component: Home,
+        meta: { requiresAuth: false }
       },
       {
         path: '/canvas',
         name: 'NotesView',
         component: NotesView,
+        meta: { requiresAuth: false }
       },
       {
         path: '/canvas/:id',
         name: 'CanvasView',
         component: CanvasView,
+        meta: { requiresAuth: false }
       },
       {
         path: '/profile',
         name: 'ProfileView',
         component: ProfileView,
+        meta: { requiresAuth: false }
       }
     ]
   }

@@ -82,10 +82,9 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch, watchEffect, onUnmounted } from 'vue'
-import { useNotesStore } from '../stores/notes'
-import { useActivitiesStore } from '../stores/activities'
+import { useStore } from 'vuex'
 import TextBox from './TextBox.vue'
-import MediaDialog from './myProfile/MediaDialog.vue'
+import MediaDialog from '../myProfile/MediaDialog.vue'
 import emitter from '../../eventBus'
 
 const props = defineProps({
@@ -93,9 +92,8 @@ const props = defineProps({
 })
 const emit = defineEmits(['back'])
 
-const notesStore = useNotesStore()
-const activitiesStore = useActivitiesStore()
-const note = computed(() => notesStore.allNotes.find(n => n.id === props.noteId) || {})
+const store = useStore()
+const note = computed(() => store.getters['notes/allNotes'].find(n => n.id === props.noteId) || {})
 const textBoxes = ref([])
 const showInstruction = ref(true)
 const localTitle = ref('')
@@ -259,17 +257,26 @@ function clearCanvas() {
 }
 
 function toggleFavorite() {
-  notesStore.toggleFavorite(props.noteId)
-  const updatedNote = notesStore.allNotes.find(n => n.id === props.noteId)
-  activitiesStore.addActivity(updatedNote.isFavorite ? '收藏画布' : '取消收藏', updatedNote.title)
+  store.dispatch('notes/toggleFavorite', props.noteId)
+  const updatedNote = store.getters['notes/allNotes'].find(n => n.id === props.noteId)
+  store.dispatch('activities/addActivity', {
+    action: updatedNote.isFavorite ? '收藏画布' : '取消收藏',
+    noteTitle: updatedNote.title
+  })
 }
 
 function saveCanvas() {
-  notesStore.updateNote(props.noteId, { 
-    title: localTitle.value,
-    textBoxes: textBoxes.value 
+  store.dispatch('notes/updateNote', {
+    id: props.noteId,
+    data: { 
+      title: localTitle.value,
+      textBoxes: textBoxes.value 
+    }
   })
-  activitiesStore.addActivity('更新画布', localTitle.value)
+  store.dispatch('activities/addActivity', {
+    action: '更新画布',
+    noteTitle: localTitle.value
+  })
   emitter.emit('notify', '画布已保存')
 }
 
@@ -277,7 +284,10 @@ function editTitle() {
   const newTitle = prompt('请输入新的画布标题', localTitle.value)
   if (newTitle && newTitle.trim()) {
     localTitle.value = newTitle.trim()
-    activitiesStore.addActivity('重命名画布', `${note.value.title} → ${newTitle}`)
+    store.dispatch('activities/addActivity', {
+      action: '重命名画布',
+      noteTitle: `${note.value.title} → ${newTitle}`
+    })
   }
 }
 
@@ -311,7 +321,7 @@ watch(() => note.value.title, (newTitle) => {
 // 监听noteId变化，同步标题和textBoxes
 watch(() => props.noteId, (id) => {
   console.log('noteId changed:', id)
-  const n = notesStore.allNotes.find(n => n.id === id)
+  const n = store.getters['notes/allNotes'].find(n => n.id === id)
   console.log('found note:', n)
   if (n) {
     localTitle.value = n.title || ''
@@ -334,13 +344,19 @@ watch(localTitle, (newTitle) => {
     }
     // 设置新的定时器，500ms后更新
     titleUpdateTimeout = setTimeout(() => {
-      notesStore.updateNote(props.noteId, { title: newTitle })
+      store.dispatch('notes/updateNote', {
+        id: props.noteId,
+        data: { title: newTitle }
+      })
     }, 500)
   }
 })
 
 watch(textBoxes, (val) => {
-  notesStore.updateNote(props.noteId, { textBoxes: val })
+  store.dispatch('notes/updateNote', {
+    id: props.noteId,
+    data: { textBoxes: val }
+  })
 }, { deep: true })
 
 onMounted(() => {

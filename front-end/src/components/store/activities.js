@@ -1,37 +1,51 @@
-import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
-export const useActivitiesStore = defineStore('activities', {
-  state: () => ({
-    activities: JSON.parse(localStorage.getItem('activities')) || []
-  }),
-  actions: {
-    addActivity(action, noteTitle) {
-      const activity = {
-        id: Date.now(),
-        action,
-        noteTitle,
-        timestamp: new Date().toISOString(),
-        icon: this.getActivityIcon(action)
-      }
-      this.activities.unshift(activity)
-      if (this.activities.length > 10) {
-        this.activities.pop()
-      }
-      localStorage.setItem('activities', JSON.stringify(this.activities))
-    },
-    getActivityIcon(action) {
-      switch (action) {
-        case '创建画布': return 'fa-plus-circle'
-        case '更新画布': return 'fa-edit'
-        case '删除画布': return 'fa-trash-alt'
-        case '收藏画布': return 'fa-star'
-        case '取消收藏': return 'fa-star-o'
-        case '重命名画布': return 'fa-edit'
-        default: return 'fa-history'
-      }
-    },
-    loadActivities() {
-      this.activities = JSON.parse(localStorage.getItem('activities')) || []
+// 活动记录数据
+const activities = ref([
+  {
+    id: 1,
+    action: '创建笔记',
+    target: '示例笔记1',
+    timestamp: new Date('2024-01-01T10:00:00')
+  },
+  {
+    id: 2,
+    action: '收藏笔记',
+    target: '示例笔记2',
+    timestamp: new Date('2024-01-02T11:00:00')
+  }
+])
+
+let nextActivityId = 3
+
+export function useActivitiesStore() {
+  const addActivity = (action, target) => {
+    const newActivity = {
+      id: nextActivityId++,
+      action,
+      target,
+      timestamp: new Date()
+    }
+    activities.value.unshift(newActivity)
+    
+    // 保持最多100条记录
+    if (activities.value.length > 100) {
+      activities.value = activities.value.slice(0, 100)
     }
   }
-})
+
+  const clearActivities = () => {
+    activities.value = []
+  }
+
+  const getRecentActivities = (limit = 10) => {
+    return activities.value.slice(0, limit)
+  }
+
+  return {
+    activities,
+    addActivity,
+    clearActivities,
+    getRecentActivities
+  }
+}

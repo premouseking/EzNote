@@ -20,48 +20,48 @@
 </template>
 
 <script setup>
-import NotesSidebar from '../components/NotesSidebar.vue'
-import NotePreview from '../components/NotePreview.vue'
-import { useNotesStore } from '../stores/notes'
-import { useActivitiesStore } from '../stores/activities'
+import NotesSidebar from '../myCanvas/NotesSidebar.vue'
+import NotePreview from '../myCanvas/NotePreview.vue'
+import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
 
-const notesStore = useNotesStore()
-const activitiesStore = useActivitiesStore()
+const store = useStore()
 const router = useRouter()
 const emit = defineEmits(['openCanvas'])
 
-const { notes, currentNote } = storeToRefs(notesStore)
+// 使用Vuex的notes模块
+const notes = computed(() => store.getters['notes/allNotes'])
+const currentNote = computed(() => store.getters['notes/currentNote'])
 
-function createNewNote() {
-  const note = notesStore.createNote()
-  activitiesStore.addActivity('创建笔记', note.title)
+async function createNewNote() {
+  const note = await store.dispatch('notes/createNote')
   router.push(`/canvas/${note.id}`)
 }
+
 function selectNote(id) {
   console.log('selectNote called, id:', id)
-  notesStore.selectNote(id)
+  store.dispatch('notes/selectNote', id)
 }
+
 function deleteNote(id) {
-  const note = notesStore.allNotes.find(n => n.id === id)
-  notesStore.deleteNote(id)
-  activitiesStore.addActivity('删除笔记', note?.title)
+  const note = notes.value.find(n => n.id === id)
+  store.dispatch('notes/deleteNote', id)
 }
+
 function toggleFavorite(id) {
   console.log('view toggleFavorite', id)
-  notesStore.toggleFavorite(id)
-  const note = notesStore.allNotes.find(n => n.id === id)
-  activitiesStore.addActivity(note.isFavorite ? '收藏笔记' : '取消收藏', note.title)
+  store.dispatch('notes/toggleFavorite', id)
 }
+
 function editNote(id, newTitle) {
-  const note = notesStore.allNotes.find(n => n.id === id)
-  notesStore.updateNote(id, { title: newTitle })
-  activitiesStore.addActivity('重命名笔记', `${note.title} → ${newTitle}`)
+  store.dispatch('notes/updateNote', { id, updates: { title: newTitle } })
 }
+
 function searchNotes(query) {
-  notesStore.searchNotes(query)
+  store.dispatch('notes/searchNotes', query)
 }
+
 function openCanvas(id) {
   console.log('openCanvas called with id:', id)
   router.push(`/canvas/${id}`)

@@ -33,7 +33,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import emitter from '../eventBus'
+import emitter from '../../eventBus'
 
 const props = defineProps(['note'])
 const emit = defineEmits(['edit', 'delete', 'view'])

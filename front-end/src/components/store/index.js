@@ -253,8 +253,232 @@ getters: {
   }
 }
 
+// Notes module
+const notes = {
+  namespaced: true,
+  state: () => {
+    const savedNotes = JSON.parse(localStorage.getItem('notes')) || []
+    // 如果没有保存的数据，创建一些测试数据
+    if (savedNotes.length === 0) {
+      const testNotes = [
+        {
+          id: '1',
+          title: '我的第一个画布',
+          imageData: '',
+          textBoxes: [
+            {
+              id: '1-1',
+              x: 100,
+              y: 100,
+              width: 200,
+              height: 120,
+              title: '欢迎使用',
+              content: '这是一个测试笔记块，你可以在这里编辑内容。',
+              mediaContent: ''
+            }
+          ],
+          isFavorite: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          title: '项目计划',
+          imageData: '',
+          textBoxes: [
+            {
+              id: '2-1',
+              x: 150,
+              y: 150,
+              width: 250,
+              height: 150,
+              title: '项目目标',
+              content: '1. 完成前端开发\n2. 测试功能\n3. 部署上线',
+              mediaContent: ''
+            }
+          ],
+          isFavorite: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ]
+      localStorage.setItem('notes', JSON.stringify(testNotes))
+      return {
+        allNotes: testNotes,
+        searchQuery: '',
+        currentNoteId: '1',
+      }
+    }
+    return {
+      allNotes: savedNotes,
+      searchQuery: '',
+      currentNoteId: savedNotes[0]?.id || null,
+    }
+  },
+  mutations: {
+    SAVE_NOTES(state) {
+      localStorage.setItem('notes', JSON.stringify(state.allNotes));
+    },
+    CREATE_NOTE(state) {
+      const newNote = {
+        id: Date.now().toString(),
+        title: '新画布',
+        imageData: '',
+        textBoxes: [],
+        isFavorite: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      state.allNotes.unshift(newNote);
+      state.currentNoteId = newNote.id;
+    },
+    SELECT_NOTE(state, id) {
+      state.currentNoteId = id;
+    },
+    DELETE_NOTE(state, id) {
+      const idx = state.allNotes.findIndex(n => n.id === id);
+      if (idx !== -1) {
+        state.allNotes.splice(idx, 1);
+        if (state.currentNoteId === id) {
+          state.currentNoteId = state.allNotes[0]?.id || null;
+        }
+      }
+    },
+    TOGGLE_FAVORITE(state, id) {
+      const note = state.allNotes.find(n => n.id === id);
+      if (note) {
+        note.isFavorite = !note.isFavorite;
+      }
+    },
+    UPDATE_NOTE(state, { id, data }) {
+      const note = state.allNotes.find(n => n.id === id);
+      if (note) {
+        Object.assign(note, data);
+        note.updatedAt = new Date().toISOString();
+      }
+    },
+    SET_SEARCH_QUERY(state, query) {
+      state.searchQuery = query;
+    }
+  },
+  actions: {
+    saveNotes({ commit }) {
+      commit('SAVE_NOTES');
+    },
+    createNote({ commit, dispatch, state }) {
+      commit('CREATE_NOTE');
+      dispatch('saveNotes');
+      // 返回新创建的note
+      return state.allNotes[0];
+    },
+    selectNote({ commit }, id) {
+      commit('SELECT_NOTE', id);
+    },
+    deleteNote({ commit, dispatch }, id) {
+      commit('DELETE_NOTE', id);
+      dispatch('saveNotes');
+    },
+    toggleFavorite({ commit, dispatch }, id) {
+      commit('TOGGLE_FAVORITE', id);
+      dispatch('saveNotes');
+    },
+    updateNote({ commit, dispatch }, { id, updates }) {
+      commit('UPDATE_NOTE', { id, data: updates });
+      dispatch('saveNotes');
+    },
+    setSearchQuery({ commit }, query) {
+      commit('SET_SEARCH_QUERY', query);
+    },
+    searchNotes({ commit, state, getters }, query) {
+      commit('SET_SEARCH_QUERY', query);
+      // 自动修正 currentNoteId
+      const filtered = getters.notes;
+      if (!filtered.find(n => n.id == state.currentNoteId)) {
+        commit('SELECT_NOTE', filtered[0]?.id || null);
+      }
+    }
+  },
+  getters: {
+    notes(state) {
+      if (!state.searchQuery.trim()) return state.allNotes;
+      const lowerQuery = state.searchQuery.toLowerCase();
+      return state.allNotes.filter(note => {
+        if (note.title && note.title.toLowerCase().includes(lowerQuery)) return true;
+        if (note.textBoxes && note.textBoxes.some(tb =>
+          (tb.title && tb.title.toLowerCase().includes(lowerQuery)) ||
+          (tb.content && tb.content.toLowerCase().includes(lowerQuery))
+        )) return true;
+        return false;
+      });
+    },
+    allNotes(state) {
+      return state.allNotes;
+    },
+    currentNote(state) {
+      return state.allNotes.find(n => n.id == state.currentNoteId) || null;
+    },
+    favoriteCount(state) {
+      return state.allNotes.filter(n => n.isFavorite).length;
+    }
+  }
+}
+
+// Activities module
+const activities = {
+  namespaced: true,
+  state: () => ({
+    activities: JSON.parse(localStorage.getItem('activities')) || []
+  }),
+  mutations: {
+    ADD_ACTIVITY(state, activity) {
+      state.activities.unshift(activity);
+      if (state.activities.length > 10) {
+        state.activities.pop();
+      }
+      localStorage.setItem('activities', JSON.stringify(state.activities));
+    },
+    LOAD_ACTIVITIES(state) {
+      state.activities = JSON.parse(localStorage.getItem('activities')) || [];
+    }
+  },
+  actions: {
+    addActivity({ commit }, { action, noteTitle }) {
+      const getActivityIcon = (action) => {
+        switch (action) {
+          case '创建画布': return 'fa-plus-circle'
+          case '更新画布': return 'fa-edit'
+          case '删除画布': return 'fa-trash-alt'
+          case '收藏画布': return 'fa-star'
+          case '取消收藏': return 'fa-star-o'
+          case '重命名画布': return 'fa-edit'
+          default: return 'fa-history'
+        }
+      };
+      
+      const activity = {
+        id: Date.now(),
+        action,
+        noteTitle,
+        timestamp: new Date().toISOString(),
+        icon: getActivityIcon(action)
+      };
+      commit('ADD_ACTIVITY', activity);
+    },
+    loadActivities({ commit }) {
+      commit('LOAD_ACTIVITIES');
+    }
+  },
+  getters: {
+    activities(state) {
+      return state.activities;
+    }
+  }
+}
+
 export default createStore({
   modules: {
-    auth
+    auth,
+    notes,
+    activities
   }
 })

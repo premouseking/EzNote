@@ -4,7 +4,7 @@
       <div class="logo-icon">N</div>
       <h1>格知笔记</h1>
     </div>
-    <div class="nav-links" v-if="!route.path.match(/^\/canvas\/[\w-]+$/)">
+    <div class="nav-center" v-if="!route.path.match(/^\/canvas\/[\w-]+$/)">
       <button class="nav-btn" :class="{active: route.path.startsWith('/canvas')}" @click="goCanvas">
         <i class="fas fa-book"></i> 我的画布
       </button>
@@ -12,19 +12,45 @@
         <i class="fas fa-user"></i> 个人主页
       </button>
     </div>
+    <div class="user-section" v-if="isAuthenticated">
+      <span class="welcome-text">欢迎, {{ currentUser.username || '用户' }}</span>
+      <button class="logout-btn" @click="handleLogout">
+        <i class="fas fa-sign-out-alt"></i> 退出
+      </button>
+    </div>
   </header>
 </template>
 
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
+import { useStore } from 'vuex'
+import { computed } from 'vue'
+
 const router = useRouter()
 const route = useRoute()
+const store = useStore()
+
+// 计算属性
+const isAuthenticated = computed(() => store.getters['auth/isAuthenticated'])
+const currentUser = computed(() => store.getters['auth/currentUser'])
 
 function goCanvas() {
   router.push('/canvas')
 }
+
 function goProfile() {
   router.push('/profile')
+}
+
+async function handleLogout() {
+  try {
+    await store.dispatch('auth/logout')
+    router.push('/login')
+  } catch (error) {
+    console.error('登出失败:', error)
+    // 即使出错也跳转到登录页
+    router.push('/login')
+  }
 }
 </script>
 
@@ -65,7 +91,7 @@ header {
   background-clip: text;
   color: transparent;
 }
-.nav-links {
+.nav-center {
   display: flex;
   gap: 20px;
 }
@@ -85,7 +111,39 @@ header {
 }
 .nav-btn.active, .nav-btn:hover {
   background: #0077cc !important;
-  color: black !important;
+  color: white !important;
   border-color: #005fa3;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.welcome-text {
+  color: var(--text-color);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.logout-btn {
+  background: #ff4757;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logout-btn:hover {
+  background: #ff3838;
+  transform: translateY(-1px);
 }
 </style>

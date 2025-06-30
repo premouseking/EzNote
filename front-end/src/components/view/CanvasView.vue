@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import CanvasApp from '../components/CanvasApp.vue'
+import CanvasApp from '@/components/Canvas/CanvasApp.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { computed } from 'vue'
 

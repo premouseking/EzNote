@@ -25,7 +25,7 @@
 
 <script setup>
 import NotesList from './NotesList.vue'
-import emitter from '../eventBus'
+import emitter from '../../eventBus'
 
 const props = defineProps({
   notes: {
