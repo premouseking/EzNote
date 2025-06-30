@@ -224,7 +224,6 @@ onMounted(() => {
     }
   }
   
-  // 延迟显示登出按钮动画
   setTimeout(() => {
     showPulse.value = true
     setTimeout(() => {
@@ -307,7 +306,6 @@ const changeTheme = (value) => {
 
 // 保存设置
 const saveSettings = () => {
-  // 保存设置到 localStorage
   const settings = {
     darkMode: darkMode.value,
     fontSize: fontSize.value,

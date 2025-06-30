@@ -2,69 +2,42 @@ import { createStore } from 'vuex'
 import axios from 'axios'
 
 /**
- * 解析JWT载荷信息
- * @param {string} token JWT令牌
+ * 解析JWT token载荷信息
+ * @param {string} token 令牌
  * @returns {Object} 解析后的用户信息
  */
 const parseJwtPayload = (token) => {
   try {
     if (!token) return {};
     
-    // JWT格式：header.payload.signature
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.warn('JWT格式不正确');
+      console.warn('token错误');
       return {};
     }
     
-    // 解码payload部分（Base64URL）
     const payload = parts[1];
-    // 处理Base64URL：替换字符并添加padding
     const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
     
-    // 解码并解析JSON
     const decoded = JSON.parse(atob(padded));
     
-    console.log('解析JWT载荷:', decoded);
+    console.log('解析decoded:', decoded);
     
-    // 返回用户信息（根据后端JWT结构调整字段映射）
+    // 返回用户信息
     return {
       id: decoded.sub || decoded.userId || decoded.id,
       username: decoded.username || decoded.name || decoded.sub,
       email: decoded.email,
       role: decoded.role || decoded.authorities,
-      // 添加JWT标准字段
       exp: decoded.exp, // 过期时间
       iat: decoded.iat, // 签发时间
-      // 保留原始载荷信息
       ...decoded
     };
   } catch (error) {
-    console.error('解析JWT失败:', error);
+    console.error('解析失败:', error);
     return {};
   }
-};
-
-/**
- * 错误处理函数
- * @param {Object} error  错误对象
- * @param {string} defaultMessage 默认错误消息
- */
-const handleApiError = (error, defaultMessage = '操作失败，请稍后重试') => {
-  console.error('API请求失败:', error);
-  
-  // 处理后端返回的错误格式
-  if (error.response?.data?.msg) {
-    throw new Error(error.response.data.msg);
-  }
-  if (error.response?.data?.message) {
-    throw new Error(error.response.data.message);
-  }
-  if (error.request) {
-    throw new Error('网络连接失败，请检查网络连接');
-  }
-  throw new Error(error.message || defaultMessage);
 };
 
 const API_ENDPOINTS = {
@@ -91,16 +64,14 @@ const auth = {
       state.token = token;
       
       if (rememberMe) {
-        // 长期存储：使用localStorage
+        // 长期存储
         localStorage.setItem('token', token);
         localStorage.setItem('rememberMe', 'true');
-        // 清除可能存在的sessionStorage
         sessionStorage.removeItem('token');
       } else {
-        // 临时存储：使用sessionStorage
+        // 临时存储
         sessionStorage.setItem('token', token);
         localStorage.setItem('rememberMe', 'false');
-        // 清除可能存在的localStorage token
         localStorage.removeItem('token');
       }
     },
@@ -144,16 +115,13 @@ const auth = {
   actions: {    
     async login({ commit }, credentials) {
       try {
-        // credentials 包含：
-        // { username: "用户输入的用户名或邮箱", password: "密码", rememberMe: true/false }
-        
-        const loginData = {
+          const loginData = {
           username: credentials.username.trim(),
           password: credentials.password,
           rememberMe: credentials.rememberMe || false
         };
         
-        console.log('发送登录请求:', { 
+        console.log('登录请求:', { 
           username: loginData.username, 
           rememberMe: loginData.rememberMe 
         });
@@ -164,11 +132,10 @@ const auth = {
         
         console.log('后端响应:', responseData);
         
-        // 后端返回格式：{ code: 1, msg: "登录成功", data: "jwt_token_string" }
         const jwtToken = responseData.data;
         
         if (!jwtToken || typeof jwtToken !== 'string') {
-          throw new Error('登录响应格式错误：缺少JWT令牌');
+          throw new Error('服务器响应错误');
         }
         
         // 从JWT中解析用户信息
@@ -190,7 +157,6 @@ const auth = {
         
         console.log('登录成功，用户信息:', userInfo);
         
-        // 返回统一格式给前端组件使用
         return {
           success: true,
           message: responseData.msg || '登录成功',
@@ -202,7 +168,6 @@ const auth = {
         
       } catch (error) {
         console.error('登录失败:', error);
-        // 重新抛出错误，让调用方处理
         throw error;
       }
     },
@@ -221,17 +186,16 @@ const auth = {
         
         console.log('注册后端响应:', responseData);
         
-        // 后端返回格式：{ code: 1, msg: "注册成功", data: "jwt_token_string" }
         const jwtToken = responseData.data;
         
         if (!jwtToken || typeof jwtToken !== 'string') {
-          throw new Error('注册响应格式错误：缺少JWT令牌');
+          throw new Error('服务器响应错误');
         }
         
-        // 从JWT中解析用户信息
+        // 解析用户信息
         const userInfo = parseJwtPayload(jwtToken);
         
-        // 注册默认不记住登录状态，用户可在后续登录时选择
+        // 注册默认不记住登录状态
         const rememberMe = false;
         
         // 保存令牌
@@ -262,26 +226,21 @@ const auth = {
         
       } catch (error) {
         console.error('注册失败:', error);
-        // 重新抛出错误，让调用方处理
         throw error;
       }
     },
     // 登出操作
     async logout({ commit }) {
       try {
-        // 如果有后端登出接口，可以调用
         // await axios.post('/logout')
-        
         // 清除本地存储的用户信息
         commit('LOGOUT')
         
         console.log('用户已成功登出')
-        
         return Promise.resolve()
+
       } catch (error) {
-        console.error('登出过程中发生错误:', error)
-        
-        // 即使出错也要清除本地数据
+        console.error('登出错误:', error)
         commit('LOGOUT')
         
         return Promise.reject(error)
@@ -294,7 +253,6 @@ const auth = {
   }
 }
 
-// 创建 store
 export default createStore({
   modules: {
     auth
