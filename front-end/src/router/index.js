@@ -2,6 +2,9 @@ import Home from '@/components/home/Home.vue'
 import Index from '@/components/Index.vue'
 import Register from '@/components/Register.vue'
 import Login from '@/components/Login.vue'
+import NotesView from '@/components/view/NotesView.vue'
+import CanvasView from '@/components/view/CanvasView.vue'
+import ProfileView from '@/components/view/ProfileView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import store from '@/components/store/index.js'
 
@@ -18,6 +21,7 @@ const routes = [
     component: Login
   },
   
+  
   {
     path: '/',
     name: 'Index',
@@ -28,7 +32,21 @@ const routes = [
         path: '/home',
         name: 'Home',
         component: Home,
-        meta: { requiresAuth: true }
+      },
+      {
+        path: '/canvas',
+        name: 'NotesView',
+        component: NotesView,
+      },
+      {
+        path: '/canvas/:id',
+        name: 'CanvasView',
+        component: CanvasView,
+      },
+      {
+        path: '/profile',
+        name: 'ProfileView',
+        component: ProfileView,
       }
     ]
   }
@@ -40,16 +58,19 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  const isAuthenticated = store.getters['auth/isAuthenticated']
+  // 临时注释掉认证检查，用于测试主页面
+  // const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  // const isAuthenticated = store.getters['auth/isAuthenticated']
   
-  if (requiresAuth && !isAuthenticated) {
-    next('/login')
-  } else if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
-    next('/home')
-  } else {
-    next()
-  }
+  // if (requiresAuth && !isAuthenticated) {
+  //   next('/login')
+  // } else if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
+  //   next('/home')
+  // } else {
+  //   next()
+  // }
+  
+  next()
 })
 
 

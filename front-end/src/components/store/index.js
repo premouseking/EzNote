@@ -53,9 +53,9 @@ const auth = {
     user: JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}'),
     rememberMe: localStorage.getItem('rememberMe') === 'true'
   },
-  mutations: {
+mutations: {
     /**
-     * @param {Object} state Vuex 状态对象
+     * @param {Object} state 状态对象
      * @param {Object} payload 包含token和rememberMe的对象
      * 设置用户的认证令牌，根据rememberMe决定存储方式
      */
@@ -112,7 +112,7 @@ const auth = {
       sessionStorage.removeItem('user')
     }
   },
-  actions: {    
+actions: {    
     async login({ commit }, credentials) {
       try {
           const loginData = {
@@ -247,7 +247,7 @@ const auth = {
       }
     }
   },
-  getters: {
+getters: {
     isAuthenticated: state => !!state.token,
     currentUser: state => state.user
   }

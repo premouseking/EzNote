@@ -1,18 +1,12 @@
 <template>
   <div>
-    <nav-menu class="navbar"></nav-menu>
+    <header class="navbar"></header>
     <router-view/>
   </div>
-
-
 </template>
 
-
 <script setup>
-
-import NavMenu from './common/NavMenu.vue';
-
-
+import Header from './common/Header.vue';
 </script>
 
 
